@@ -8,7 +8,9 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   role: { type: mongoose.Schema.Types.ObjectId, ref: 'Role', required: true },
-  dateCreation: { type: Date, default: Date.now }
+  dateCreation: { type: Date, default: Date.now },
+  isActive: { type: Boolean, default: true },
+  lastlogin: { type: Date }
 });
 
 // Hash du mot de passe avant sauvegarde
