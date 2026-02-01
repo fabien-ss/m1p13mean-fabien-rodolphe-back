@@ -10,6 +10,9 @@ var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var testRouter = require('./routes/test');
 var authRouter = require('./routes/auth');
+var roleRouter = require('./routes/role');
+var boutiqueRouter = require('./routes/boutique');
+var produitRouter = require('./routes/produit');
 
 var app = express();
 
@@ -27,5 +30,8 @@ app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/test', testRouter);
 app.use('/auth', authRouter);
+app.use('/role', roleRouter);
+app.use('/boutique', boutiqueRouter);
+app.use('/produit', produitRouter);
 
 module.exports = app;
