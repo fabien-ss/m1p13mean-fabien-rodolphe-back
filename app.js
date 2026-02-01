@@ -10,6 +10,7 @@ var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var testRouter = require('./routes/test');
 var authRouter = require('./routes/auth');
+var roleRouter = require('./routes/role');
 
 var app = express();
 
@@ -27,5 +28,6 @@ app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/test', testRouter);
 app.use('/auth', authRouter);
+app.use('/role', roleRouter)
 
 module.exports = app;
