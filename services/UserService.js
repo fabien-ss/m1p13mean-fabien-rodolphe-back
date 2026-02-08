@@ -11,7 +11,7 @@ class UserService {
 
   // Création d'un utilisateur
   static async register(data) {
-    const { prenom, nom, email, password, role } = data;
+    const { firstName, name, email, password, role } = data;
 
     console.log(data)
 
@@ -31,10 +31,10 @@ class UserService {
 
     // Crée l'utilisateur avec role._id
     const user = new User({
-      prenom,
-      nom,
-      email,
-      password,
+      firstName: firstName,
+      name: name,
+      email: email,
+      password: password,
       role: roleDoc._id
     });
 
@@ -44,8 +44,8 @@ class UserService {
     const userPopulated = await User.findById(user._id).populate('role', 'name');
     const userResponse = {
       id: userPopulated._id,
-      prenom: userPopulated.prenom,
-      nom: userPopulated.nom,
+      prenom: userPopulated.firstName,
+      name: userPopulated.name,
       email: userPopulated.email,
       role: userPopulated.role.name
     }
@@ -54,7 +54,9 @@ class UserService {
 
   // Login
   // Login (inchangé)
-  static async login(email, password) {
+  static async login(_email, _password) {
+    const email = _email.trim();
+    const password = _password.trim();
     const user = await User.findOne({ email }).populate('role', 'name');
     if (!user) throw new Error('Utilisateur non trouvé');
 
@@ -69,7 +71,7 @@ class UserService {
 
     return {
       token,
-      user: { id: user._id, prenom: user.prenom, nom: user.nom, role: user.role.name }
+      user: { id: user._id, firstName: user.firstName, name: user.name, role: user.role.name }
     };
   }
 

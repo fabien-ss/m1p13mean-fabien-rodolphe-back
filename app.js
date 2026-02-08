@@ -1,37 +1,65 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 
+const cors = require('cors');
 var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./swagger');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var testRouter = require('./routes/test');
 var authRouter = require('./routes/auth');
 var roleRouter = require('./routes/role');
-var boutiqueRouter = require('./routes/boutique');
-var produitRouter = require('./routes/produit');
+var shopRouter = require('./routes/shop');
+var productRouter = require('./routes/product');
+var categoryRouter = require('./routes/category')
 
 var app = express();
 
+
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB connecté"))
-  .catch(err => console.error("Erreur MongoDB:", err));
+.then(() => console.log("MongoDB connecté"))
+.catch(err => console.error("Erreur MongoDB:", err));
 
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+const allowedOrigins = [
+  'http://localhost:4200',
+  'http://localhost:3000',
+  'http://localhost:40477',
+  'https://my-prod-site.com',
+  'http://localhost:41957'
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }, // your Angular dev server
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/test', testRouter);
-app.use('/auth', authRouter);
+app.use('/auth', authRouter);string
 app.use('/role', roleRouter);
-app.use('/boutique', boutiqueRouter);
-app.use('/produit', produitRouter);
+app.use('/shop', shopRouter);
+app.use('/product', productRouter);
+app.use('/category', categoryRouter)
 
 module.exports = app;

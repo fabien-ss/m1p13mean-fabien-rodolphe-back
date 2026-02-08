@@ -3,12 +3,12 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
-  prenom: { type: String, required: true },
-  nom: { type: String, required: true },
   email: { type: String, required: true, unique: true },
+  firstName: { type: String, required: true },
+  name: { type: String, required: true },
   password: { type: String, required: true },
-  role: { type: mongoose.Schema.Types.ObjectId, ref: 'Role', required: true },
-  dateCreation: { type: Date, default: Date.now },
+  role: { type: mongoose.Schema.Types.ObjectId, ref: 'role', required: true },
+  creationDate: { type: Date, default: Date.now },
   isActive: { type: Boolean, default: true },
   lastlogin: { type: Date }
 });
@@ -26,4 +26,4 @@ userSchema.methods.comparePassword = async function(password) {
   return await bcrypt.compare(password, this.password);
 };
 
-module.exports = mongoose.model('User', userSchema);
+module.exports = mongoose.model('user', userSchema);
