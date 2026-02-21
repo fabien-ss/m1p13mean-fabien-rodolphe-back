@@ -17,6 +17,8 @@ class ShopService {
       email: manager
     })
 
+    console.log(ShopManager)
+
     if (!ShopManager) throw new Error(`Aucune adresse associée '${manager}'`);
 
     const shop = new Shop({
@@ -24,7 +26,6 @@ class ShopService {
       description: description,
       email: email,
       phone: phone,
-      manager: manager,
       images: images,
       type: type,
       manager: ShopManager
@@ -38,11 +39,9 @@ class ShopService {
   static async getAll(user) {
     const { id } = user;
     return await Shop.find({
-      manager: id,
-      isActive: true
+      manager: id
     })
       .populate('manager', 'firstName name email role')
-      .populate('product', 'product');
   }
 
   // Récupérer une shop par ID
@@ -50,7 +49,6 @@ class ShopService {
     const shop = await Shop.findById(id)
       .populate('mall', 'nom adresse')
       .populate('manager', 'prenom nom email')
-      .populate('product'); // si tu veux les produits
     if (!shop) throw new Error('Shop non trouvée');
     return shop;
   }
