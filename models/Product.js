@@ -12,12 +12,12 @@ const productSchema = new mongoose.Schema({
   model: { type: String },
   available: { type: Boolean, default: true },
   images: [{ type: String }],
-  category: { type: String },
+  category: { type: mongoose.Schema.Types.ObjectId, ref: 'category' },
   tags: [{ type: String }],
   shop: { type: mongoose.Schema.Types.ObjectId, ref: 'shop', required: true },
   creationDate: { type: Date, default: Date.now },
   modificationDate: { type: Date, default: Date.now },
-  modifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+  modifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'user' }
 });
 
 module.exports = mongoose.model('product', productSchema);
