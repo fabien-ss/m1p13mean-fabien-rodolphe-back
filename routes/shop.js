@@ -135,7 +135,7 @@ router.get('/featured', async (req, res) => {
  *       404:
  *         description: Shop not found
  */
-router.get('/:id', authMiddleware(), async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     const boutique = await ShopService.getById(req.params.id);
     console.log(boutique)
