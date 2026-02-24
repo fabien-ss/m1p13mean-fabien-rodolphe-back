@@ -37,20 +37,25 @@ class ShopService {
 
   // Récupérer toutes les boutiques
   static async getAll(user) {
-    const { id } = user;
-    return await Shop.find({
-      manager: id
-    })
-      .populate('manager', 'firstName name email role')
+    if (user) {
+      const { id } = user;
+      return await Shop.find({
+        manager: id
+      })
+        .populate('manager', 'firstName name email role')
+    }else{
+      return await Shop.find()
+        .populate('manager', 'firstName name email')
+    }
   }
 
-static async getFeaturedShops(limit = 6) {
+  static async getFeaturedShops(limit = 6) {
 
-  return await Shop.find({ isActive: true })
-    .select('name location images')
-    .limit(limit)
-    .lean();
-}
+    return await Shop.find({ isActive: true })
+      .select('name location images')
+      .limit(limit)
+      .lean();
+  }
 
   // Récupérer une shop par ID
   static async getById(id) {

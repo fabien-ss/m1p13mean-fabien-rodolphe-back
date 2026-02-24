@@ -101,6 +101,15 @@ router.get('/', authMiddleware(), async (req, res) => {
   }
 });
 
+router.get('/list', async (req, res) => {
+  try {
+    const boutiques = await ShopService.getAll();
+    res.json(boutiques);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.get('/featured', async (req, res) => {
   try {
     const boutiques = await ShopService.getFeaturedShops(6);
