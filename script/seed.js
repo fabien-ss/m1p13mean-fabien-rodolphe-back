@@ -2,118 +2,124 @@
 require("dotenv").config();
 const mongoose = require("mongoose");
 
-// 🔁 Adapte ces chemins à ton projet
 const Shop = require("../models/Shop");
 const Product = require("../models/Product");
+
+// ✅ Fixed IDs (so products can reliably reference shops)
 const SHOP_IDS = {
-  TECH_PRESTIGE: "69a498b66719393c9bf8a2a1",      // Tech & Prestige
-  MAISON_MODE: "69a498b66719393c9bf8a2a2",        // Maison de la Mode
-  MAISON_PARFUMEE: "69a498b66719393c9bf8a2a3",    // Maison Parfumée
-  CORDONNIER_ROYAL: "69a498b66719393c9bf8a2a4",   // Cordonnier Royal
-  MAISON_INTERIEURE: "69a498b66719393c9bf8a2a5",  // Maison Intérieure
-  OPTICA_PRIME: "69a498b66719393c9bf8a2a6",       // Optica Prime
+  TECH_PRESTIGE: "69a498b66719393c9bf8a2a1",
+  MAISON_MODE: "69a498b66719393c9bf8a2a2",
+  MAISON_PARFUMEE: "69a498b66719393c9bf8a2a3",
+  CORDONNIER_ROYAL: "69a498b66719393c9bf8a2a4",
+  MAISON_INTERIEURE: "69a498b66719393c9bf8a2a5",
+  OPTICA_PRIME: "69a498b66719393c9bf8a2a6",
 };
 
-// const SHOPS = [
-//   {
-//     name: "Tech & Prestige",
-//     description:
-//       "L’excellence technologique au service de votre quotidien. Des pièces rares et un service après-vente sur mesure dans un cadre raffiné.",
-//     email: "contact@techprestige.mg",
-//     phone: "+261 34 00 000 01",
-//     manager: "69a497363c2ca3647feb71ab",
-//     creationDate: new Date("2023-01-15"),
-//     type: "Électronique de Luxe",
-//     location: "Box 1, RDC",
-//     images: [
-//       "https://images.unsplash.com/photo-1550009158-9ebf69173e03?q=80&w=2000",
-//       "https://placehold.co/400x400/0f172a/ffffff?text=TP",
-//     ],
-//     isActive: true,
-//   },
-//   {
-//     name: "Maison de la Mode",
-//     description:
-//       "Haute couture et prêt-à-porter de luxe. Découvrez des collections exclusives issues des plus grands créateurs internationaux.",
-//     email: "boutique@maisonmode.mg",
-//     phone: "+261 34 00 000 02",
-//     manager: "69a497363c2ca3647feb71ab",
-//     creationDate: new Date("2023-05-20"),
-//     type: "Mode & Accessoires",
-//     location: "Box 2, RDC",
-//     images: [
-//       "https://img.freepik.com/photos-gratuite/interieur-magasin-vetements-marchandises-elegantes-etageres-design-marque-mode-vetements-decontractes-dans-boutique-moderne-salle-exposition-mode-vide-dans-centre-commercial-marchandises-elegantes_482257-65537.jpg?semt=ais_hybrid&w=740&q=80",
-//       "https://placehold.co/400x400/1e293b/ffffff?text=MM",
-//     ],
-//     isActive: true,
-//   },
-//   {
-//     name: "Maison Parfumée",
-//     description:
-//       "Parfums rares, bougies couture et soins haut de gamme. Une signature olfactive pour chaque moment.",
-//     email: "bonjour@maisonparfumee.mg",
-//     phone: "+261 34 00 000 03",
-//     manager: "69a497363c2ca3647feb71ab",
-//     creationDate: new Date("2023-09-10"),
-//     type: "Beauté & Parfumerie",
-//     location: "Box 6, RDC",
-//     images: [
-//       "https://images.unsplash.com/photo-1541643600914-78b084683601?q=80&w=2000",
-//       "https://placehold.co/400x400/4f46e5/ffffff?text=MP",
-//     ],
-//     isActive: true,
-//   },
-//   {
-//     name: "Cordonnier Royal",
-//     description:
-//       "Souliers cousus main, maroquinerie fine et accessoires de caractère. L’artisanat au sommet.",
-//     email: "contact@cordonnierroyal.mg",
-//     phone: "+261 34 00 000 04",
-//     manager: "69a497363c2ca3647feb71ab",
-//     creationDate: new Date("2022-11-04"),
-//     type: "Mode & Accessoires",
-//     location: "Box 12, 1er étage",
-//     images: [
-//       "https://images.unsplash.com/photo-1528701800489-20be3c8c1d39?q=80&w=2000",
-//       "https://placehold.co/400x400/0f172a/ffffff?text=CR",
-//     ],
-//     isActive: true,
-//   },
-//   {
-//     name: "Maison Intérieure",
-//     description:
-//       "Mobilier design, décoration premium et pièces artisanales pour un intérieur élégant.",
-//     email: "hello@maisoninterieure.mg",
-//     phone: "+261 34 00 000 05",
-//     manager: "69a497363c2ca3647feb71ab",
-//     creationDate: new Date("2024-02-18"),
-//     type: "Maison & Décoration",
-//     location: "Box 3, 1er étage",
-//     images: [
-//       "https://images.unsplash.com/photo-1505693314120-0d443867891c?q=80&w=2000",
-//       "https://placehold.co/400x400/1e293b/ffffff?text=MI",
-//     ],
-//     isActive: true,
-//   },
-//   {
-//     name: "Optica Prime",
-//     description:
-//       "Lunettes premium, verres polarisés et montures titane. Un style précis, une vision parfaite.",
-//     email: "service@opticaprime.mg",
-//     phone: "+261 34 00 000 06",
-//     manager: "69a497363c2ca3647feb71ab",
-//     creationDate: new Date("2024-06-01"),
-//     type: "Accessoires & Optique",
-//     location: "Box 9, RDC",
-//     images: [
-//       "https://images.unsplash.com/photo-1511499767150-a48a237f0083?q=80&w=2000",
-//       "https://placehold.co/400x400/4f46e5/ffffff?text=OP",
-//     ],
-//     isActive: true,
-//   },
-// ];
-
-// ❌ Pas de promo, pas de oldPrice
+// ✅ Shops (re-enabled) — IMPORTANT: set _id so they match SHOP_IDS
+const SHOPS = [
+  {
+    _id: new mongoose.Types.ObjectId(SHOP_IDS.TECH_PRESTIGE),
+    name: "Tech & Prestige",
+    description:
+      "L’excellence technologique au service de votre quotidien. Des pièces rares et un service après-vente sur mesure dans un cadre raffiné.",
+    email: "contact@techprestige.mg",
+    phone: "+261 34 00 000 01",
+    manager: "69a497363c2ca3647feb71ab",
+    creationDate: new Date("2023-01-15"),
+    type: "Électronique de Luxe",
+    location: "Box 1, RDC",
+    images: [
+      "https://images.unsplash.com/photo-1550009158-9ebf69173e03?q=80&w=2000",
+      "https://placehold.co/400x400/0f172a/ffffff?text=TP",
+    ],
+    isActive: true,
+  },
+  {
+    _id: new mongoose.Types.ObjectId(SHOP_IDS.MAISON_MODE),
+    name: "Maison de la Mode",
+    description:
+      "Haute couture et prêt-à-porter de luxe. Découvrez des collections exclusives issues des plus grands créateurs internationaux.",
+    email: "boutique@maisonmode.mg",
+    phone: "+261 34 00 000 02",
+    manager: "69a497363c2ca3647feb71ab",
+    creationDate: new Date("2023-05-20"),
+    type: "Mode & Accessoires",
+    location: "Box 2, RDC",
+    images: [
+      "https://img.freepik.com/photos-gratuite/interieur-magasin-vetements-marchandises-elegantes-etageres-design-marque-mode-vetements-decontractes-dans-boutique-moderne-salle-exposition-mode-vide-dans-centre-commercial-marchandises-elegantes_482257-65537.jpg?semt=ais_hybrid&w=740&q=80",
+      "https://placehold.co/400x400/1e293b/ffffff?text=MM",
+    ],
+    isActive: true,
+  },
+  {
+    _id: new mongoose.Types.ObjectId(SHOP_IDS.MAISON_PARFUMEE),
+    name: "Maison Parfumée",
+    description:
+      "Parfums rares, bougies couture et soins haut de gamme. Une signature olfactive pour chaque moment.",
+    email: "bonjour@maisonparfumee.mg",
+    phone: "+261 34 00 000 03",
+    manager: "69a497363c2ca3647feb71ab",
+    creationDate: new Date("2023-09-10"),
+    type: "Beauté & Parfumerie",
+    location: "Box 6, RDC",
+    images: [
+      "https://images.unsplash.com/photo-1541643600914-78b084683601?q=80&w=2000",
+      "https://placehold.co/400x400/4f46e5/ffffff?text=MP",
+    ],
+    isActive: true,
+  },
+  {
+    _id: new mongoose.Types.ObjectId(SHOP_IDS.CORDONNIER_ROYAL),
+    name: "Cordonnier Royal",
+    description:
+      "Souliers cousus main, maroquinerie fine et accessoires de caractère. L’artisanat au sommet.",
+    email: "contact@cordonnierroyal.mg",
+    phone: "+261 34 00 000 04",
+    manager: "69a497363c2ca3647feb71ab",
+    creationDate: new Date("2022-11-04"),
+    type: "Mode & Accessoires",
+    location: "Box 12, 1er étage",
+    images: [
+      "https://images.unsplash.com/photo-1528701800489-20be3c8c1d39?q=80&w=2000",
+      "https://placehold.co/400x400/0f172a/ffffff?text=CR",
+    ],
+    isActive: true,
+  },
+  {
+    _id: new mongoose.Types.ObjectId(SHOP_IDS.MAISON_INTERIEURE),
+    name: "Maison Intérieure",
+    description:
+      "Mobilier design, décoration premium et pièces artisanales pour un intérieur élégant.",
+    email: "hello@maisoninterieure.mg",
+    phone: "+261 34 00 000 05",
+    manager: "69a497363c2ca3647feb71ab",
+    creationDate: new Date("2024-02-18"),
+    type: "Maison & Décoration",
+    location: "Box 3, 1er étage",
+    images: [
+      "https://images.unsplash.com/photo-1505693314120-0d443867891c?q=80&w=2000",
+      "https://placehold.co/400x400/1e293b/ffffff?text=MI",
+    ],
+    isActive: true,
+  },
+  {
+    _id: new mongoose.Types.ObjectId(SHOP_IDS.OPTICA_PRIME),
+    name: "Optica Prime",
+    description:
+      "Lunettes premium, verres polarisés et montures titane. Un style précis, une vision parfaite.",
+    email: "service@opticaprime.mg",
+    phone: "+261 34 00 000 06",
+    manager: "69a497363c2ca3647feb71ab",
+    creationDate: new Date("2024-06-01"),
+    type: "Accessoires & Optique",
+    location: "Box 9, RDC",
+    images: [
+      "https://images.unsplash.com/photo-1511499767150-a48a237f0083?q=80&w=2000",
+      "https://placehold.co/400x400/4f46e5/ffffff?text=OP",
+    ],
+    isActive: true,
+  },
+];
 const PRODUCTS = [
   {
     name: "Casque Studio Carbon",
@@ -524,15 +530,34 @@ async function run() {
   await mongoose.connect(uri);
   console.log("✅ Mongo connected");
 
-  // ⚠️ Reset (supprime tout)
-  // await Shop.deleteMany({});
+  // 🔁 Reset collections (uncomment if you want full reset)
   await Product.deleteMany({});
+  await Shop.deleteMany({});
 
-  // await Shop.insertMany(SHOPS);
-  await Product.insertMany(PRODUCTS);
+  // 1) Insert shops first
+  // If you rerun often, insertMany can error on duplicate _id.
+  // Using upsert avoids duplicate crashes.
+  const shopOps = SHOPS.map((shop) => ({
+    updateOne: {
+      filter: { _id: shop._id },
+      update: { $set: shop },
+      upsert: true,
+    },
+  }));
+  await Shop.bulkWrite(shopOps);
+  console.log(`✅ Shops upserted: ${SHOPS.length}`);
 
-  console.log(`✅ Seed done: ${PRODUCTS.length} products`);
+  // 2) Insert products after (and ensure shop is ObjectId)
+  const productsToInsert = PRODUCTS.map((p) => ({
+    ...p,
+    shop: new mongoose.Types.ObjectId(p.shop), // p.shop is a string id in SHOP_IDS
+  }));
+
+  await Product.insertMany(productsToInsert);
+  console.log(`✅ Products inserted: ${PRODUCTS.length}`);
+
   await mongoose.disconnect();
+  console.log("✅ Disconnected");
 }
 
 run().catch((e) => {

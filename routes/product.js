@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const ProductService = require('../services/ProductService');
+const PromotionService = require('../services/PromotionService');
 const authMiddleware = require('../middleware/auth');
 const upload = require("../middleware/upload");
 
@@ -118,7 +119,8 @@ router.get('/', authMiddleware(), async (req, res) => {
 router.get('/list',  async (req, res) => {
   try {
     const produits = await ProductService.getAll();
-    res.json(produits);
+    const productsWithPromos = await PromotionService.applyPromotions(produits);
+    res.json(productsWithPromos);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -162,7 +164,8 @@ router.get('/:id', authMiddleware(), async (req, res) => {
 router.get('/client/:id', async (req, res) => {
   try {
     const produit = await ProductService.getById(req.params.id);
-    res.json(produit);
+    const produitWithPromo = await PromotionService.applyToProduct(produit);
+    res.json(produitWithPromo);
   } catch (err) {
     res.status(404).json({ error: err.message });
   }
