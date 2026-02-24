@@ -93,8 +93,8 @@ router.post('/', authMiddleware(['admin', 'boutique']), async (req, res) => {
  */
 router.get('/', authMiddleware(), async (req, res) => {
   try {
-    console.log(req)
     const boutiques = await ShopService.getAll(req.user);
+    console.log(boutiques)
     res.json(boutiques);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -129,6 +129,7 @@ router.get('/', authMiddleware(), async (req, res) => {
 router.get('/:id', authMiddleware(), async (req, res) => {
   try {
     const boutique = await ShopService.getById(req.params.id);
+    console.log(boutique)
     res.json(boutique);
   } catch (err) {
     res.status(404).json({ error: err.message });
@@ -136,6 +137,7 @@ router.get('/:id', authMiddleware(), async (req, res) => {
 });
 
 /**
+ * 69a2ae288803df1eeef59595
  * @swagger
  * /shop/{id}:
  *   put:
