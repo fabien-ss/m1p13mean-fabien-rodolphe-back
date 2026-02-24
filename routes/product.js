@@ -159,6 +159,15 @@ router.get('/:id', authMiddleware(), async (req, res) => {
   }
 });
 
+router.get('/client/:id', async (req, res) => {
+  try {
+    const produit = await ProductService.getById(req.params.id);
+    res.json(produit);
+  } catch (err) {
+    res.status(404).json({ error: err.message });
+  }
+});
+
 router.get('/:id/pricing', authMiddleware(), async (req, res) => {
   try {
     const pricing = await ProductService.getPricing(req.params.id, req.user);
@@ -261,7 +270,7 @@ router.put('/:id/active', authMiddleware(['admin', 'boutique']), async (req, res
   }
 });
 
-router.get('/shop/:shopId', authMiddleware(["admin", "shop", "client"]), async (req, res) => {
+router.get('/shop/:shopId', async (req, res) => {
   try {
     const products = await ProductService.getByShop(req.params.shopId);
     res.status(200).json(products);

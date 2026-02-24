@@ -84,7 +84,7 @@ class ProductService {
 
     if (!produit) throw new Error('Produit non trouvé');
 
-    if (user.role === 'shop' && produit.shop._id.toString() !== user.shop.toString()) {
+    if (user && user.role === 'shop' && produit.shop._id.toString() !== user.shop.toString()) {
       throw new Error('Non autorisé');
     }
 
