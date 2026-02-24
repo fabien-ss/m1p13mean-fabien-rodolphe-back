@@ -115,6 +115,16 @@ router.get('/', authMiddleware(), async (req, res) => {
   }
 });
 
+router.get('/list',  async (req, res) => {
+  try {
+    const produits = await ProductService.getAll();
+    res.json(produits);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 /**
  * @swagger
  * /product/{id}:
@@ -251,7 +261,7 @@ router.put('/:id/active', authMiddleware(['admin', 'boutique']), async (req, res
   }
 });
 
-router.get('/shop/:shopId', authMiddleware(["admin", "shop"]), async (req, res) => {
+router.get('/shop/:shopId', authMiddleware(["admin", "shop", "client"]), async (req, res) => {
   try {
     const products = await ProductService.getByShop(req.params.shopId);
     res.status(200).json(products);

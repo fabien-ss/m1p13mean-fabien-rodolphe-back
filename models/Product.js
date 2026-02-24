@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const productSchema = new mongoose.Schema({
   name: { type: String, required: true },
   description: { type: String },
+  price: { type: Number, required: true },
   devise: { type: String, default: 'MGA' },
   stock: { type: Number, default: 0 },
   brand: { type: String },
@@ -12,7 +13,7 @@ const productSchema = new mongoose.Schema({
   model: { type: String },
   available: { type: Boolean, default: true },
   images: [{ type: String }],
-  category: { type: mongoose.Schema.Types.ObjectId, ref: 'category' },
+  category: { type: mongoose.Schema.Types.ObjectId, ref: 'category' , required: false},
   tags: [{ type: String }],
   shop: { type: mongoose.Schema.Types.ObjectId, ref: 'shop', required: true },
   creationDate: { type: Date, default: Date.now },

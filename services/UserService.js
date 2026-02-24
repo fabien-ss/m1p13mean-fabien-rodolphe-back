@@ -26,7 +26,7 @@ class UserService {
     console.log(roleDoc)
     if (!roleDoc) {
       // Si le rôle n'existe pas, on peut soit créer un rôle par défaut
-      roleDoc = await Role.findOne({ name: 'acheteur' });
+      roleDoc = await Role.findOne({ name: 'client' });
     }
 
     // Crée l'utilisateur avec role._id

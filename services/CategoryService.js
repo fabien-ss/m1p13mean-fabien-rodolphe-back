@@ -23,10 +23,10 @@ class CategoryService {
         const category = new Category({
             name: name,
             parent: categorieParent,
-            createdBy: currentUser,
+            // createdBy: currentUser,
             isActive: status,
             description: description,
-            shop: targetShop
+            // shop: targetShop
         })
 
         await category.save()

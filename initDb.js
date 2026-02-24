@@ -22,7 +22,7 @@ async function init() {
     const rolesData = [
       { name: 'admin', description: 'Administrateur du centre commercial' },
       { name: 'boutique', description: 'Gérant de boutique' },
-      { name: 'acheteur', description: 'Client final' }
+      { name: 'client', description: 'Client final' }
     ];
 
     for (const role of rolesData) {
@@ -35,7 +35,7 @@ async function init() {
 
     const roleAdmin = await Role.findOne({ name: 'admin' });
     const roleBoutique = await Role.findOne({ name: 'boutique' });
-    const roleAcheteur = await Role.findOne({ name: 'acheteur' });
+    const roleAcheteur = await Role.findOne({ name: 'client' });
 
     // --------------------
     // 2️⃣ Centre commercial

@@ -9,6 +9,7 @@ const shopSchema = new mongoose.Schema({
   manager: { type: mongoose.Schema.Types.ObjectId, ref: 'user' }, // profil shop
   creationDate: { type: Date, default: Date.now },
   type: { type: String },
+  location: { type: String },
   images: [{ type: String }],
   isActive: { type: Boolean, default: false }
 });

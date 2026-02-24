@@ -9,7 +9,7 @@ const Order = require('../models/Order');
 class ProductService {
 
   // Créer un produit
-   static async create(data, user, imageUrls) {
+  static async create(data, user, imageUrls) {
     if (user.role !== 'admin' && user.role !== 'boutique') {
       throw new Error('Non autorisé à créer un produit');
     }
@@ -64,11 +64,16 @@ class ProductService {
 
   // Récupérer tous les produits
   static async getAll(user) {
-    const filter = user.role === 'shop' ? { shop: user.shop } : {};
-
-    return await Product.find(filter)
-      .populate('shop', 'nom')
-      .populate('modifiedBy', 'prenom nom');
+    if (user) {
+      const filter = user.role === 'shop' ? { shop: user.shop } : {};
+      return await Product.find(filter)
+        .populate('shop', 'nom')
+        .populate('modifiedBy', 'prenom nom');
+    }else{
+      return await Product.find({ stock: { $gt: 0 }, available: true })
+        .populate('shop', 'nom')
+        .populate('modifiedBy', 'prenom nom');
+    }
   }
 
   // Récupérer un produit par ID
@@ -187,14 +192,14 @@ class ProductService {
     await ProductService.getById(id, user); // vérifie accès
     // ajouter filtre date now entre date debut et end date, si aucun resultat ce sera end date null
 
-    return await Pricing.find({ 
+    return await Pricing.find({
       product: id,
       startDate: { $lte: new Date() },
       $or: [
-          { endDate: { $gte: new Date() } },
-          { endDate: null }
-        ]
-      })
+        { endDate: { $gte: new Date() } },
+        { endDate: null }
+      ]
+    })
       .populate('createdBy', 'prenom nom')
       .sort({ startDate: -1 });
   }

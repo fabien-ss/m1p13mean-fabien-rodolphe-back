@@ -44,10 +44,17 @@ class ShopService {
       .populate('manager', 'firstName name email role')
   }
 
+static async getFeaturedShops(limit = 6) {
+
+  return await Shop.find({ isActive: true })
+    .select('name location images')
+    .limit(limit)
+    .lean();
+}
+
   // Récupérer une shop par ID
   static async getById(id) {
     const shop = await Shop.findById(id)
-      .populate('mall', 'nom adresse')
       .populate('manager', 'prenom nom email')
     if (!shop) throw new Error('Shop non trouvée');
     return shop;
