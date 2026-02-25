@@ -119,7 +119,7 @@ router.get('/', authMiddleware(), async (req, res) => {
 router.get('/list', async (req, res) => {
   try {
     const produits = await ProductService.getAll();
-    const productsWithPromos = await PromotionService.applyPromotions(produits);
+    const productsWithPromos = await PromotionService.applyToProducts(produits);
     res.json(productsWithPromos);
   } catch (err) {
     res.status(500).json({ error: err.message });
