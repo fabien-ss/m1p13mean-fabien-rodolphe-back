@@ -2,7 +2,7 @@
 const express = require('express');
 const router  = express.Router();
 const Promotion       = require('../models/Promotion');
-const PromotionService = require('../services/promotion.service');
+const PromotionService = require('../services/PromotionService');
 const Product = require('../models/Product');
 
 

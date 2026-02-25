@@ -20,6 +20,7 @@ var productRouter = require('./routes/product');
 var categoryRouter = require('./routes/category')
 var movementRouter = require('./routes/movement');
 var princingRouter = require('./routes/pricing');
+var promotionRouter = require('./routes/promotion');
 
 var app = express();
 
@@ -72,5 +73,5 @@ app.use('/category', categoryRouter)
 app.use("/uploads", express.static("uploads"));
 app.use('/movement', movementRouter);
 app.use('/pricing', princingRouter);
-
+app.use('/promotion', promotionRouter);
 module.exports = app;
