@@ -5,7 +5,7 @@ const Pricing = require('../models/Pricing');
 const mongoose = require('mongoose');
 const Shop = require('../models/Shop');
 const Order = require('../models/Order');
-
+const PromotionService = require('./PromotionService');
 class ProductService {
 
   // Créer un produit
@@ -69,7 +69,7 @@ class ProductService {
       return await Product.find(filter)
         .populate('shop', 'nom')
         .populate('modifiedBy', 'prenom nom');
-    }else{
+    } else {
       return await Product.find({ stock: { $gt: 0 }, available: true })
         .populate('shop', 'nom')
         .populate('modifiedBy', 'prenom nom');
@@ -274,6 +274,226 @@ class ProductService {
     await produit.save();
 
     return produit;
+  }
+
+
+  /**
+   * Recherche avancée de produits avec filtres, tri et pagination.
+   * @param {ProductSearchParams} params
+   */
+  static async search(params = {}) {
+    const {
+      q,
+      shop,
+      category,
+      brands = [],
+      tags = [],
+      available,
+      inStock = true,
+      onPromo = false,
+      minPrice,
+      maxPrice,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+      page = 1,
+      limit = 20,
+      withPromos = true,
+    } = params;
+
+    const filter = {};
+
+    // Recherche full-text sur plusieurs champs via regex
+    if (q?.trim()) {
+      const regex = new RegExp(q.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      filter.$or = [
+        { name: regex },
+        { brand: regex },
+        { description: regex },
+        { tags: regex },
+        { sku: regex },
+        { model: regex },
+      ];
+    }
+
+    if (shop) filter.shop = shop;
+    if (category) filter.category = category;
+
+    // Filtres multi-valeurs (OR dans le tableau)
+    if (brands.length) filter.brand = { $in: brands };
+    if (tags.length) filter.tags = { $in: tags };
+
+    if (available !== undefined) filter.available = available;
+    if (inStock === true) filter.stock = { $gt: 0 };
+    if (inStock === false) filter.stock = 0;
+
+    // Plage de prix sur le prix brut (avant promo)
+    if (minPrice !== undefined || maxPrice !== undefined) {
+      filter.price = {};
+      if (minPrice !== undefined) filter.price.$gte = Number(minPrice);
+      if (maxPrice !== undefined) filter.price.$lte = Number(maxPrice);
+    }
+
+    // Tri
+    const direction = sortOrder === 'asc' ? 1 : -1;
+    const mongoSort = sortBy === 'discountPercent'
+      ? { price: direction }          // fallback, sera retried après enrichissement
+      : { [sortBy]: direction };
+
+    // Pagination
+    const safePage = Math.max(1, parseInt(page));
+    const safeLimit = Math.min(100, Math.max(1, parseInt(limit)));
+    const skip = (safePage - 1) * safeLimit;
+
+    let [products, total] = await Promise.all([
+      Product.find(filter)
+        .populate('category', 'name slug')
+        .populate('shop', 'name logo location')
+        .sort(mongoSort)
+        .skip(skip)
+        .limit(safeLimit)
+        .lean(),
+      Product.countDocuments(filter),
+    ]);
+    //promos
+    if (withPromos && products.length) {
+      products = await PromotionService.applyToProducts(products);
+    }
+
+    if (onPromo) { // check if promo is active
+      products = products.filter(p => p.promo === true);
+      total = products.length; // recalcul approximatif côté app
+    }
+
+    return {
+      data: products,
+      total,
+      page: safePage,
+      totalPages: Math.ceil(total / safeLimit),
+      hasNext: safePage < Math.ceil(total / safeLimit),
+      hasPrev: safePage > 1,
+    };
+  }
+
+
+  /**
+   * Retourne tous les filtres disponibles pour un scope donné.
+   * Utilisé par le front pour construire la sidebar dynamiquement.
+   *
+   * @param {{ shop?: string, category?: string }} scope
+   * @returns {{ brands, tags, priceRange, totalProducts }}
+   */
+  static async getFilterMetadata(scope = {}) {
+    const match = { available: true };
+    if (scope.shop) match.shop = scope.shop;
+    if (scope.category) match.category = scope.category;
+
+    const [brands, tags, priceRange, totalProducts] = await Promise.all([
+      ProductService.listBrands(match),
+      ProductService.listTags(match),
+      ProductService.getPriceRange(match),
+      Product.countDocuments(match),
+    ]);
+
+    return { brands, tags, priceRange, totalProducts };
+  }
+
+  /**
+   * Liste toutes les marques disponibles avec leur nombre de produits.
+   * @returns {{ brand: string, count: number }[]}
+   *
+   * Exemple: [{ brand: "Nike", count: 12 }, { brand: "Zara", count: 8 }]
+   */
+  static async listBrands(match = {}) {
+    return Product.aggregate([
+      { $match: { ...match, brand: { $ne: null, $exists: true, $ne: '' } } },
+      { $group: { _id: '$brand', count: { $sum: 1 } } },
+      { $project: { _id: 0, brand: '$_id', count: 1 } },
+      { $sort: { count: -1 } },
+    ]);
+  }
+
+  /**
+   * Liste tous les tags disponibles avec leur fréquence.
+   * @returns {{ tag: string, count: number }[]}
+   *
+   * Exemple: [{ tag: "sport", count: 24 }, { tag: "été", count: 18 }]
+   */
+  static async listTags(match = {}) {
+    return Product.aggregate([
+      { $match: { ...match, tags: { $exists: true, $not: { $size: 0 } } } },
+      { $unwind: '$tags' },
+      { $group: { _id: '$tags', count: { $sum: 1 } } },
+      { $project: { _id: 0, tag: '$_id', count: 1 } },
+      { $sort: { count: -1 } },
+      { $limit: 50 }, // les 50 tags les plus populaires
+    ]);
+  }
+
+  /**
+   * Retourne le prix min et max du catalogue
+   * @returns {{ min: number, max: number, avg: number }}
+   */
+  static async getPriceRange(match = {}) {
+    const result = await Product.aggregate([
+      { $match: match },
+      {
+        $group: {
+          _id: null,
+          min: { $min: '$price' },
+          max: { $max: '$price' },
+          avg: { $avg: '$price' },
+        }
+      },
+      { $project: { _id: 0, min: 1, max: 1, avg: { $round: ['$avg', 0] } } },
+    ]);
+
+    return result[0] ?? { min: 0, max: 0, avg: 0 };
+  }
+
+  /**
+   * Suggestions d'autocomplétion pour la barre de recherche.
+   * Retourne les noms + marques qui matchent le terme.
+   *
+   * @param {string} term
+   * @param {number} limit
+   * @returns {string[]} liste de suggestions uniques
+   *
+   * Exemple pour "ni": ["Nike Air Max", "Nike React", "Nike"]
+   */
+  static async autocomplete(term, limit = 8) {
+    if (!term?.trim()) return [];
+    const regex = new RegExp('^' + term.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+
+    const [byName, byBrand] = await Promise.all([
+      Product.find({ name: regex, available: true })
+        .select('name')
+        .limit(limit)
+        .lean(),
+      Product.distinct('brand', { brand: regex, available: true }),
+    ]);
+
+    const suggestions = [
+      ...byBrand.filter(Boolean),
+      ...byName.map(p => p.name),
+    ];
+
+    // Déduplique et limite
+    return [...new Set(suggestions)].slice(0, limit);
+  }
+
+
+  // nouveaux produits
+  static async getNewArrivals({ shop, limit = 8 } = {}) {
+    const filter = { available: true };
+    if (shop) filter.shop = shop;
+
+    const products = await Product.find(filter)
+      .populate('category', 'name')
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .lean();
+
+    return PromotionService.applyToProducts(products);
   }
 }
 

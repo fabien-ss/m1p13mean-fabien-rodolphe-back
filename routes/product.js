@@ -5,6 +5,27 @@ const PromotionService = require('../services/PromotionService');
 const authMiddleware = require('../middleware/auth');
 const upload = require("../middleware/upload");
 
+router.get('/search', async (req, res) => {
+  const result = await ProductService.search({
+    ...req.query,
+    brands: [].concat(req.query.brands ?? []),
+    tags:   [].concat(req.query.tags   ?? []),
+  });
+  res.json(result);
+});
+
+// GET /api/products/filters?shop=xxx  → alimente la sidebar Angular
+router.get('/filters', async (req, res) => {
+  const meta = await ProductService.getFilterMetadata({ shop: req.query.shop });
+  res.json(meta);
+});
+
+// GET /api/products/autocomplete?q=ni
+router.get('/autocomplete', async (req, res) => {
+  const suggestions = await ProductService.autocomplete(req.query.q);
+  res.json(suggestions);
+});
+
 /**
  * @swagger
  * tags:
