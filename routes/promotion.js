@@ -6,6 +6,50 @@ const PromotionService = require('../services/promotion.service');
 const Product = require('../models/Product');
 
 
+router.get('/', async (req, res) => {
+  try {
+    const now    = new Date();
+    const filter = {};
+
+    if (req.query.productId) filter.product = req.query.productId;
+
+    if (req.query.status === 'active') {
+      filter.startDate = { $lte: now };
+      filter.$or = [{ endDate: null }, { endDate: { $gte: now } }];
+    } else if (req.query.status === 'upcoming') {
+      filter.startDate = { $gt: now };
+    } else if (req.query.status === 'expired') {
+      filter.endDate = { $lt: now };
+    }
+
+    const page  = Math.max(1, parseInt(req.query.page)  || 1);
+    const limit = Math.min(100, parseInt(req.query.limit) || 20);
+
+    const [data, total] = await Promise.all([
+      Promotion.find(filter)
+        .populate('product',   'name price devise images')
+        .populate('createdBy', 'name email')
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+      Promotion.countDocuments(filter),
+    ]);
+
+    res.json({
+      data,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+      hasNext: page < Math.ceil(total / limit),
+      hasPrev: page > 1,
+    });
+
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 router.get('/:id', async (req, res) => {
   try {
     const promo = await Promotion.findById(req.params.id)
