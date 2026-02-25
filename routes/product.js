@@ -116,7 +116,7 @@ router.get('/', authMiddleware(), async (req, res) => {
   }
 });
 
-router.get('/list',  async (req, res) => {
+router.get('/list', async (req, res) => {
   try {
     const produits = await ProductService.getAll();
     const productsWithPromos = await PromotionService.applyPromotions(produits);
@@ -124,6 +124,14 @@ router.get('/list',  async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+router.get('/hot-deals', async (req, res) => {
+  const limit = Number(req.query.limit) || 4;
+  const minDiscountPercent = Number(req.query.minDiscountPercent) || 10;
+
+  const deals = await PromotionService.getHotDeals({ limit, minDiscountPercent });
+  res.json(deals);
 });
 
 

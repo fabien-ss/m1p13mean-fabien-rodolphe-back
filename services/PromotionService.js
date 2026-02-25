@@ -147,6 +147,55 @@ class PromotionService {
             };
         });
     }
+
+    static async getHotDeals({ limit = 8, minDiscountPercent = 10, now = new Date() } = {}) {
+
+        const promos = await Promotion.find({
+            startDate: { $lte: now },
+            $or: [{ endDate: null }, { endDate: { $gte: now } }],
+        }).populate('product', 'name price images brand devise stock available');
+
+        // filtrer les produits indisponibles ou sans stock
+        const validPromos = promos.filter(promo =>
+            promo.product &&
+            promo.product.available &&
+            promo.product.stock > 0
+        );
+
+        // calculer le prix final pour chaque promo et filtrer par minDiscountPercent
+        const deals = validPromos
+            .map(promo => {
+                const pricing = this.calcFinalPrice(promo.product.price, promo);
+                return {
+                    promotion: promo,
+                    product: {
+                        ...promo.product.toObject(),
+                        price: pricing.price,
+                        oldPrice: pricing.oldPrice,
+                        discountAmount: pricing.discountAmount,
+                        discountPercent: pricing.discountPercent,
+                        promo: pricing.promo,
+                    },
+                };
+            })
+            .filter(deal => deal.product.discountPercent >= minDiscountPercent);
+
+        // garder que la meilleure promos
+        const bestPerProduct = new Map();
+        for (const deal of deals) {
+            const key = deal.product._id.toString();
+            const existing = bestPerProduct.get(key);
+            if (!existing || deal.product.discountAmount > existing.product.discountAmount) {
+                bestPerProduct.set(key, deal);
+            }
+        }
+
+        return [...bestPerProduct.values()]
+            .sort((a, b) => b.product.discountAmount - a.product.discountAmount)
+            .slice(0, limit)
+            .map(deal => deal.product);
+    }
 }
+
 
 module.exports = PromotionService;
