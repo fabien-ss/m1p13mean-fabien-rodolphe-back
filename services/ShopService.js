@@ -11,6 +11,7 @@ class ShopService {
     const existing = await Shop.findOne({ name, email });
     if (existing) throw new Error(`La shop '${name}' existe déjà`);
 
+<<<<<<< HEAD
     const shopManager = await User.findOne({ email: manager });
     if (!shopManager) throw new Error(`Aucun utilisateur associé à '${manager}'`);
 
@@ -23,6 +24,27 @@ class ShopService {
       isActive: isActive === 'true' || isActive === true,  // FormData envoie des strings
       images: imageUrls,
       manager: shopManager._id
+=======
+    if (existing) throw new Error(`La shop '${nom}' existe déjà dans ce centre commercial`);
+
+    console.log(manager)
+    const ShopManager = await User.findOne({
+      email: manager
+    })
+
+    console.log(ShopManager)
+
+    if (!ShopManager) throw new Error(`Aucune adresse associée '${manager}'`);
+
+    const shop = new Shop({
+      name: name,
+      description: description,
+      email: email,
+      phone: phone,
+      images: images,
+      type: type,
+      manager: ShopManager
+>>>>>>> ca52ad898f712558fe2f4a0ea67ae6e3691f4b3c
     });
 
     await shop.save();
@@ -31,18 +53,31 @@ class ShopService {
 
   // Récupérer toutes les boutiques
   static async getAll(user) {
+<<<<<<< HEAD
     const { id, role } = user;
 
     const query = role === 'admin' ? {} : { manager: id };
 
     return await Shop.find(query)
       .populate('manager', 'firstName name email role');
+=======
+    const { id } = user;
+    return await Shop.find({
+      manager: id
+    })
+      .populate('manager', 'firstName name email role')
+>>>>>>> ca52ad898f712558fe2f4a0ea67ae6e3691f4b3c
   }
 
   // Récupérer une shop par ID
   static async getById(id) {
     const shop = await Shop.findById(id)
+<<<<<<< HEAD
       .populate('manager', 'firstName name email role');
+=======
+      .populate('mall', 'nom adresse')
+      .populate('manager', 'prenom nom email')
+>>>>>>> ca52ad898f712558fe2f4a0ea67ae6e3691f4b3c
     if (!shop) throw new Error('Shop non trouvée');
     return shop;
   }

@@ -74,11 +74,10 @@ const upload = require("../middleware/upload");
  *       400:
  *         description: Bad request
  */
-router.post('/', authMiddleware(['admin']), upload.array("image"), async (req, res) => {
+router.post('/', authMiddleware(['admin', 'boutique']), async (req, res) => {
   try {
-    const imageUrls = req.files.map(file => `/uploads/shops/${file.filename}`);
-    const shop = await ShopService.create({ ...req.body, images: imageUrls });
-    res.status(201).json(shop);
+    const produit = await ProductService.create(req.body, req.user);
+    res.status(201).json(produit);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }

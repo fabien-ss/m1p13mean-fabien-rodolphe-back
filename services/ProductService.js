@@ -270,6 +270,7 @@ class ProductService {
 
     return produit;
   }
+<<<<<<< HEAD
   static async getTopFiveBestSellingProducts(shopId) {
     const topProducts = await Order.aggregate([
       { $match: { shop: new mongoose.Types.ObjectId(shopId), statut: 'completed' } },
@@ -298,6 +299,8 @@ class ProductService {
 
     return topProducts;
   }
+=======
+>>>>>>> ca52ad898f712558fe2f4a0ea67ae6e3691f4b3c
 }
 
 module.exports = ProductService;
