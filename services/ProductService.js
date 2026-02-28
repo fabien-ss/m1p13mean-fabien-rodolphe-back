@@ -3,35 +3,37 @@ const Product = require('../models/Product');
 const ProductMovement = require('../models/ProductMovement');
 const Pricing = require('../models/Pricing');
 const mongoose = require('mongoose');
+const Shop = require('../models/Shop');
+const Order = require('../models/Order');
 
 class ProductService {
 
   // Créer un produit
-  static async create(data, user) {
-    if (user.role !== 'admin' && user.role !== 'shop') {
+   static async create(data, user, imageUrls) {
+    if (user.role !== 'admin' && user.role !== 'boutique') {
       throw new Error('Non autorisé à créer un produit');
     }
 
-    if (user.role === 'shop') {
-      data.shop = user.shop;
-    }
-
-    const session = await mongoose.startSession();
-    session.startTransaction();
-
     try {
-      const { price, sellingPrice, stock, isActive, ...productData } = data;
+      const { name, category, brand, sku, barcode, model, description, costPrice, sellingPrice, stock, expiryDate, isActive, shop } = data;
+      const shopProduct = await Shop.findById(shop);
 
-      // 1. Créer le produit
       const produit = new Product({
-        ...productData,
+        name,
+        category,
+        brand,
+        sku,
+        barcode,
+        model,
+        description,
         stock: stock ?? 0,
         available: isActive ?? true,
-        modifiedBy: user.id
+        modifiedBy: user.id,
+        shop: shopProduct,
+        images: imageUrls
       });
-      await produit.save({ session });
+      await produit.save();
 
-      // 2. Mouvement de stock initial
       if (stock > 0) {
         const movement = new ProductMovement({
           product: produit._id,
@@ -40,28 +42,22 @@ class ProductService {
           reason: 'initial stock',
           createdBy: user.id
         });
-        await movement.save({ session });
+        await movement.save();
       }
 
-      // 3. Pricing initial
       const pricing = new Pricing({
         product: produit._id,
-        costPrice: price,
+        costPrice,
         sellingPrice,
         startDate: new Date(),
-        endDate: null,
+        endDate: expiryDate,
         createdBy: user.id
       });
-      await pricing.save({ session });
-
-      await session.commitTransaction();
-      session.endSession();
+      await pricing.save();
 
       return produit;
 
     } catch (err) {
-      await session.abortTransaction();
-      session.endSession();
       throw err;
     }
   }
@@ -189,9 +185,118 @@ class ProductService {
   // Récupérer l'historique des prix d'un produit
   static async getPricing(id, user) {
     await ProductService.getById(id, user); // vérifie accès
-    return await Pricing.find({ product: id })
+    // ajouter filtre date now entre date debut et end date, si aucun resultat ce sera end date null
+
+    return await Pricing.find({ 
+      product: id,
+      startDate: { $lte: new Date() },
+      $or: [
+          { endDate: { $gte: new Date() } },
+          { endDate: null }
+        ]
+      })
       .populate('createdBy', 'prenom nom')
       .sort({ startDate: -1 });
+  }
+
+  static async getByShop(shopId) {
+    const products = await Product.find({ shop: shopId })
+      .populate('modifiedBy', 'prenom nom')
+      .populate('category', 'name')
+      ;
+
+    const productsWithDetails = await Promise.all(products.map(async (product) => {
+      // Get current pricing
+      const currentPricing = await Pricing.findOne({
+        product: product._id,
+        startDate: { $lte: new Date() },
+        $or: [
+          { endDate: { $gte: new Date() } },
+          { endDate: null }
+        ]
+      }).sort({ createdAt: -1 });
+
+      // Get pending orders for this product (locked stock)
+      const pendingOrders = await Order.find({
+        statut: 'in progress',
+        'products.produit': product._id
+      });
+
+      // Sum up locked quantity across all pending orders
+      const locked = pendingOrders.reduce((total, order) => {
+        const item = order.products.find(p => p.produit.toString() === product._id.toString());
+        return total + (item ? item.quantite : 0);
+      }, 0);
+
+      const minStock = product.stock - locked;
+
+      return {
+        ...product.toObject(),
+        sellingPrice: currentPricing ? currentPricing.sellingPrice : null,
+        locked,
+        minStock
+      };
+    }));
+
+    return productsWithDetails;
+  }
+
+  // get the current price of each product in the shop by using pricing collection, last princing where current date is between startDate and endDate order by last created and if endDate is null then if there is no result where endDate is null is the current price
+  static async getCurrentPricesByShop(shopId) {
+    const products = await Product.find({ shop: shopId });
+    const productIds = products.map(p => p._id);
+
+    const pricings = await Pricing.find({
+      product: { $in: productIds },
+      startDate: { $lte: new Date() },
+      $or: [
+        { endDate: { $gte: new Date() } },
+        { endDate: null }
+      ]
+    }).sort({ createdAt: -1 });
+  }
+  static async setActive(id, isActive, user) {
+    const produit = await Product.findById(id);
+    if (!produit) throw new Error('Produit non trouvé');
+
+    if (user.role === 'shop' && produit.shop.toString() !== user.shop.toString()) {
+      throw new Error('Non autorisé');
+    }
+
+    produit.available = isActive;
+    produit.modifiedBy = user.id;
+    produit.modificationDate = new Date();
+    await produit.save();
+
+    return produit;
+  }
+  static async getTopFiveBestSellingProducts(shopId) {
+    const topProducts = await Order.aggregate([
+      { $match: { shop: new mongoose.Types.ObjectId(shopId), statut: 'completed' } },
+      { $unwind: '$products' },
+      { $group: { _id: '$products.produit', totalSold: { $sum: '$products.quantite' } } },
+      { $sort: { totalSold: -1 } },
+      { $limit: 5 },
+      {
+        $lookup: {
+          from: 'products',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'productDetails'
+        }
+      },
+      { $unwind: '$productDetails' },
+      {
+        $project: {
+          _id: 0,
+          productId: '$_id',
+          name: '$productDetails.name',
+          totalSold: 1
+        }
+      }
+    ]);
+
+    return topProducts;
   }
 }
 

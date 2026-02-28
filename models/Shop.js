@@ -7,7 +7,6 @@ const shopSchema = new mongoose.Schema({
   email: { type: String },
   phone: { type: String },
   manager: { type: mongoose.Schema.Types.ObjectId, ref: 'user' }, // profil shop
-  product: [{ type: mongoose.Schema.Types.ObjectId, ref: 'product' }], // facultatif
   creationDate: { type: Date, default: Date.now },
   type: { type: String },
   images: [{ type: String }],

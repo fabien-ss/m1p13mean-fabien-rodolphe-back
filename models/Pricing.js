@@ -7,7 +7,8 @@ const pricingSchema = new mongoose.Schema({
   sellingPrice: { type: Number, required: true },
   startDate: { type: Date, default: Date.now },
   endDate: { type: Date, default: null }, // null = currently active
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'user' },
+  note: { type: String } 
 });
 
 module.exports = mongoose.model('pricing', pricingSchema);

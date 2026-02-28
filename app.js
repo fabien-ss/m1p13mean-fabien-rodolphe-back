@@ -18,9 +18,17 @@ var roleRouter = require('./routes/role');
 var shopRouter = require('./routes/shop');
 var productRouter = require('./routes/product');
 var categoryRouter = require('./routes/category')
+var movementRouter = require('./routes/movement');
+var princingRouter = require('./routes/pricing');
+const orderRoutes = require('./routes/order');
 
 var app = express();
 
+const fs = require("fs");
+
+if (!fs.existsSync("uploads")) {
+  fs.mkdirSync("uploads");
+}
 
 mongoose.connect(process.env.MONGO_URI)
 .then(() => console.log("MongoDB connecté"))
@@ -56,10 +64,14 @@ app.use(cors({
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/test', testRouter);
-app.use('/auth', authRouter);string
+app.use('/auth', authRouter);
 app.use('/role', roleRouter);
 app.use('/shop', shopRouter);
 app.use('/product', productRouter);
 app.use('/category', categoryRouter)
+app.use("/uploads", express.static("uploads"));
+app.use('/movement', movementRouter);
+app.use('/pricing', princingRouter);
+app.use('/orders', orderRoutes);
 
 module.exports = app;

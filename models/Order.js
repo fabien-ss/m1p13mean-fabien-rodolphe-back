@@ -10,8 +10,8 @@ const orderSchema = new mongoose.Schema({
     }
   ],
   total: { type: Number, required: true },
-  statut: { type: String, enum: ['en cours', 'livrée', 'annulée'], default: 'en cours' },
+  statut: { type: String, enum: ['pending', 'in progress', 'delivered', 'cancelled'], default: 'in progress' },
   creationDate: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model('Commande', orderSchema);
+module.exports = mongoose.model('order', orderSchema);

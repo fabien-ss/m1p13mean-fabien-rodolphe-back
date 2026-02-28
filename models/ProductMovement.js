@@ -7,7 +7,7 @@ const productMovementSchema = new mongoose.Schema({
   quantity: { type: Number, required: true },
   reason: { type: String }, // e.g. 'initial stock', 'sale', 'return'
   date: { type: Date, default: Date.now },
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'user' }
 });
 
 module.exports = mongoose.model('productMovement', productMovementSchema);

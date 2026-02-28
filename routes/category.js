@@ -12,8 +12,21 @@ router.get('/', authMiddleware(), async (req, res) => {
     }
 });
 
+// category by shop
+router.get('/shop/:shopId', authMiddleware(), async (req, res) => {
+    try {
+      const category = await CategoryService.getAllByShop(req.params.shopId);
+      res.json(category);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+});
+
 router.post('/', authMiddleware(['admin', 'boutique']), async (req, res) => {
     try {
+      console.log('Create category request body:', req.body);
+      console.log('Authenticated user:', req.user);
+      
       const category = await CategoryService.create(req.body, req.user);
       res.status(201).json(category);
     } catch (err) {
