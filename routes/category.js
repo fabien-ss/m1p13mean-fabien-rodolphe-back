@@ -34,4 +34,21 @@ router.post('/', authMiddleware(['admin', 'boutique']), async (req, res) => {
     }
 });
   
+router.put('/:id', authMiddleware(['admin', 'boutique']), async (req, res) => {
+    try {
+      const updatedCategory = await CategoryService.update(req.params.id, req.body, req.user);
+      res.json(updatedCategory);
+    } catch (err) {
+      res.status(400).json({ error: err.message });
+    }
+});
+  
+router.delete('/:id', authMiddleware(['admin', 'boutique']), async (req, res) => {
+    try {
+      await CategoryService.delete(req.params.id, req.user);
+      res.json({ message: 'Category deleted successfully' });
+    } catch (err) {
+      res.status(400).json({ error: err.message });
+    }
+});
 module.exports = router;
