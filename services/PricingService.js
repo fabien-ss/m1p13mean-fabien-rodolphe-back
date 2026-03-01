@@ -1,4 +1,6 @@
 const Pricing = require('../models/Pricing');
+const Product = require('../models/Product');
+const mongoose = require('mongoose');
 
 class PricingService {
 
@@ -30,6 +32,9 @@ class PricingService {
         note: note ?? ''
     });
 
+    // update product price field
+
+    await Product.findByIdAndUpdate(product, { price: sellingPrice });
     await pricing.save();
     return pricing;
   }

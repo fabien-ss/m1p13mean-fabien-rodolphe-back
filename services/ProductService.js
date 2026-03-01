@@ -16,6 +16,9 @@ class ProductService {
 
     try {
       const { name, category, brand, sku, barcode, model, description, costPrice, sellingPrice, stock, expiryDate, isActive, shop } = data;
+
+      console.log('Creating product with data:', data);
+
       const shopProduct = await Shop.findById(shop);
 
       const produit = new Product({
@@ -30,7 +33,9 @@ class ProductService {
         available: isActive ?? true,
         modifiedBy: user.id,
         shop: shopProduct,
-        images: imageUrls
+        images: imageUrls,
+        price: sellingPrice,
+        costPrice: costPrice
       });
       await produit.save();
 
@@ -237,7 +242,7 @@ class ProductService {
 
       return {
         ...product.toObject(),
-        sellingPrice: currentPricing ? currentPricing.sellingPrice : null,
+        sellingPrice: currentPricing ? currentPricing.sellingPrice : product.sellingPrice,
         locked,
         minStock
       };
@@ -494,6 +499,35 @@ class ProductService {
       .lean();
 
     return PromotionService.applyToProducts(products);
+  }
+  
+  static async getTopFiveBestSellingProducts(shopId) {
+    const topProducts = await Order.aggregate([
+      { $match: { shop: new mongoose.Types.ObjectId(shopId), statut: 'completed' } },
+      { $unwind: '$products' },
+      { $group: { _id: '$products.produit', totalSold: { $sum: '$products.quantite' } } },
+      { $sort: { totalSold: -1 } },
+      { $limit: 5 },
+      {
+        $lookup: {
+          from: 'products',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'productDetails'
+        }
+      },
+      { $unwind: '$productDetails' },
+      {
+        $project: {
+          _id: 0,
+          productId: '$_id',
+          name: '$productDetails.name',
+          totalSold: 1
+        }
+      }
+    ]);
+
+    return topProducts;
   }
 }
 

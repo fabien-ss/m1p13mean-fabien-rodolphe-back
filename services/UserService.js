@@ -2,7 +2,7 @@
 // models
 const User = require('../models/User');
 const Role = require('../models/Role'); // nouveau modèle Role
-
+const Order = require('../models/Order');
 // lib
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
@@ -49,7 +49,7 @@ class UserService {
       email: userPopulated.email,
       role: userPopulated.role.name
     }
-    return { message: 'Utilisateur créé avec succès', user: userResponse };
+    return { message: 'Utilisateur créé avec succès', user: userPopulated };
   }
 
   // Login
@@ -71,7 +71,13 @@ class UserService {
 
     return {
       token,
-      user: { id: user._id, firstName: user.firstName, name: user.name, role: user.role.name }
+      user: { 
+        id: user._id, 
+        firstName: user.firstName, 
+        name: user.name, 
+        role: user.role.name,
+        email: user.email
+      }
     };
   }
 
@@ -79,6 +85,78 @@ class UserService {
   static async getAll() {
     return await User.find().select('-password'); // on cache les passwords
   }
+
+  static async countClients() {
+    const clientRole = await Role.findOne({ name: 'client' });
+    if (!clientRole) return 0;
+    return await User.countDocuments({ role: clientRole._id });
+  }
+
+  static async countOrders(){
+    const orders = await Order.countDocuments();
+    return orders;
+  }
+  static async getById(id) {
+  const user = await User.findById(id)
+    .select('-password')
+    .populate('role', 'name');
+  if (!user) throw new Error('Utilisateur non trouvé');
+  return user;
+}
+
+static async getAll() {
+  return await User.find()
+    .select('-password')
+    .populate('role', 'name');
+}
+
+static async update(id, data) {
+  // On ne permet pas de changer le password via update
+  delete data.password;
+
+  // Si role est un nom (string), on résout l'ObjectId
+  if (data.role && typeof data.role === 'string' && !data.role.match(/^[0-9a-fA-F]{24}$/)) {
+    const roleDoc = await Role.findOne({ name: data.role });
+    if (!roleDoc) throw new Error(`Rôle '${data.role}' introuvable`);
+    data.role = roleDoc._id;
+  }
+
+  const user = await User.findByIdAndUpdate(id, data, { new: true })
+    .select('-password')
+    .populate('role', 'name');
+  if (!user) throw new Error('Utilisateur non trouvé');
+  return user;
+}
+
+static async deactivate(id) {
+  const user = await User.findByIdAndUpdate(id, { isActive: false }, { new: true })
+    .select('-password')
+    .populate('role', 'name');
+  if (!user) throw new Error('Utilisateur non trouvé');
+  return user;
+}
+
+static async activate(id) {
+  const user = await User.findByIdAndUpdate(id, { isActive: true }, { new: true })
+    .select('-password')
+    .populate('role', 'name');
+  if (!user) throw new Error('Utilisateur non trouvé');
+  return user;
+}
+
+static async resetPassword(id, newPassword) {
+  if (!newPassword || newPassword.length < 6)
+    throw new Error('Le mot de passe doit contenir au moins 6 caractères');
+
+  const salt = await bcrypt.genSalt(10);
+  const hashed = await bcrypt.hash(newPassword, salt);
+
+  const user = await User.findByIdAndUpdate(id, { password: hashed }, { new: true })
+    .select('-password')
+    .populate('role', 'name');
+  if (!user) throw new Error('Utilisateur non trouvé');
+  return { message: 'Mot de passe réinitialisé avec succès', user };
+}
 }
 
 module.exports = UserService;

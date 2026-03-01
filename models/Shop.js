@@ -11,7 +11,10 @@ const shopSchema = new mongoose.Schema({
   type: { type: String },
   location: { type: String },
   images: [{ type: String }],
-  isActive: { type: Boolean, default: false }
+  isActive: { type: Boolean, default: false },
+  // Add to shopSchema in models/Boutique.js
+  monthlyTarget: { type: Number, default: 0 },
+  salesOverrides: { type: Map, of: new mongoose.Schema({ sales: Number, revenue: Number }) },
 });
 
 module.exports = mongoose.model('shop', shopSchema);

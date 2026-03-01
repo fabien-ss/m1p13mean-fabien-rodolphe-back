@@ -21,6 +21,9 @@ var categoryRouter = require('./routes/category')
 var movementRouter = require('./routes/movement');
 var princingRouter = require('./routes/pricing');
 var promotionRouter = require('./routes/promotion');
+const orderRoutes = require('./routes/order');
+var statsRouter = require('./routes/stats');
+var adminStatsRouter = require('./routes/admin-stats');
 
 var app = express();
 
@@ -74,4 +77,8 @@ app.use("/uploads", express.static("uploads"));
 app.use('/movement', movementRouter);
 app.use('/pricing', princingRouter);
 app.use('/promotion', promotionRouter);
+app.use('/orders', orderRoutes);
+app.use('/stats', statsRouter);
+app.use('/admin/stats', adminStatsRouter);
+
 module.exports = app;

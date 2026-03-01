@@ -34,7 +34,7 @@ class CategoryService {
         return category;
     }
     static async getAllByShop(shopId) {
-        return Category.find({ shop: shopId })
+        return Category.find()
             .populate("parent", "name")
             .sort({ creationDate: -1 });
     }

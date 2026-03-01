@@ -7,8 +7,7 @@ const categorySchema = new mongoose.Schema({
   parent: { type: mongoose.Schema.Types.ObjectId, ref: 'category', required: false },
   isActive: { type: Boolean, default: true },
   creationDate: { type: Date, default: Date.now },
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'user', required: true },
-  shop: { type: mongoose.Schema.Types.ObjectId, ref: 'shop', required: true }
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'user', required: true }
 });
 
 module.exports = mongoose.model('category', categorySchema);
