@@ -4,6 +4,8 @@ const mongoose = require('mongoose');
 const productSchema = new mongoose.Schema({
   name: { type: String, required: true },
   description: { type: String },
+  price: { type: Number, default: 0 },
+  costPrice: { type: Number, default: 0 },
   devise: { type: String, default: 'MGA' },
   stock: { type: Number, default: 0 },
   brand: { type: String },

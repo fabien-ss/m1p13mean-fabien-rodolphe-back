@@ -49,7 +49,7 @@ class UserService {
       email: userPopulated.email,
       role: userPopulated.role.name
     }
-    return { message: 'Utilisateur créé avec succès', user: userResponse };
+    return { message: 'Utilisateur créé avec succès', user: userPopulated };
   }
 
   // Login
@@ -71,7 +71,13 @@ class UserService {
 
     return {
       token,
-      user: { id: user._id, firstName: user.firstName, name: user.name, role: user.role.name }
+      user: { 
+        id: user._id, 
+        firstName: user.firstName, 
+        name: user.name, 
+        role: user.role.name,
+        email: user.email
+      }
     };
   }
 
