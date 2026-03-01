@@ -6,6 +6,14 @@ const PromotionService = require('../services/PromotionService');
 const Product = require('../models/Product');
 const authMiddleware = require('../middleware/auth');
 
+router.put('/:id/disable', authMiddleware(['admin', 'boutique']), async (req, res) => {
+  try {
+    const promo = await PromotionService.disablePromotion(req.params.id);
+    res.json(promo);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
 
 router.get('/', async (req, res) => {
   try {
@@ -139,5 +147,16 @@ router.get('/product/:productId', async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
+// getByShop
+router.get('/shop/:shopId', async (req, res) => {
+  try {
+    const promos = await PromotionService.getByShop(req.params.shopId);
+    res.json(promos);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 
 module.exports = router;
