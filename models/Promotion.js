@@ -8,7 +8,7 @@ const promotionSchema = new mongoose.Schema(
       ref: "product",
       required: true,
       index: true,
-    },
+    },  
 
     title: { type: String, required: true, trim: true },
     description: { type: String, default: "" },

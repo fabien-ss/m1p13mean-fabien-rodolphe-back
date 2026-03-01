@@ -50,7 +50,8 @@ const allowedOrigins = [
   'http://localhost:40477',
   'https://my-prod-site.com',
   'http://localhost:41957',
-  "http://localhost:57345"
+  "http://localhost:57345",
+  "https://m1p13mean-fabien-rodolph.netlify.app"
 ];
 
 app.use(cors({
