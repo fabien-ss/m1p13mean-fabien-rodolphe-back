@@ -57,7 +57,7 @@ router.put('/:orderId/status', async (req, res) => {
     try {
         const { status } = req.body;
         if (!status) return res.status(400).json({ message: 'Le champ status est requis.' });
-        const updated = await OrderService.updateOrderStatus(req.params.orderId, status);
+        const updated = await OrderService.updateOrderStatus(req.params.orderId, status, req.user);
         res.json(updated);
     } catch (err) {
         res.status(400).json({ message: err.message });

@@ -2,6 +2,7 @@ const Order = require('../models/Order');
 const Product = require('../models/Product');
 const User = require('../models/User');
 const mongoose = require('mongoose');
+const ProductMovement = require("../models/ProductMovement");
 
 class OrderService {
 
@@ -153,19 +154,19 @@ class OrderService {
      * @param {string} orderId
      * @param {string} newStatus
      */
-    static async updateOrderStatus(orderId, newStatus) {
+    static async updateOrderStatus(orderId, newStatus, user) {
         const allowed = ['pending', 'in progress', 'delivered', 'cancelled'];
         if (!allowed.includes(newStatus)) {
             throw new Error(`Statut invalide. Valeurs autorisées : ${allowed.join(', ')}`);
         }
-
+        
         const order = await Order.findById(orderId);
         if (!order) throw new Error('Commande introuvable.');
-
+        
         if (order.statut === 'delivered' || order.statut === 'cancelled') {
             throw new Error('Impossible de modifier une commande déjà livrée ou annulée.');
         }
-
+        
         // Restituer le stock si annulation
         if (newStatus === 'cancelled') {
             for (const item of order.products) {
@@ -173,6 +174,18 @@ class OrderService {
                     $inc: { stock: item.quantite }
                 });
             }
+        }
+        if (newStatus == "in progress"){
+            const movements = order.products.map(item => ({
+                product: item.produit,
+                type: 'out',
+                quantity: item.quantite,
+                reason: `sale - order #${order._id}`,
+                date: new Date(),
+                createdBy: user
+            }));
+
+            await ProductMovement.insertMany(movements);
         }
 
         order.statut = newStatus;
