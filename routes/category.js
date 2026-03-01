@@ -12,6 +12,15 @@ router.get('/', authMiddleware(), async (req, res) => {
     }
 });
 
+router.get('/client-list', async (req, res) => {
+    try {
+      const category = await CategoryService.getAllActive();
+      res.json(category);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+});
+
 // category by shop
 router.get('/shop/:shopId', authMiddleware(), async (req, res) => {
     try {

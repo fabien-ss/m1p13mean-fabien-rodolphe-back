@@ -15,7 +15,7 @@ class ProductService {
     }
 
     try {
-      const { name, category, brand, sku, barcode, model, description, costPrice, sellingPrice, stock, expiryDate, isActive, shop } = data;
+      const { name, category, brand, sku, barcode, model, description, costPrice, price, stock, expiryDate, isActive, shop } = data;
 
       console.log('Creating product with data:', data);
 
@@ -34,7 +34,7 @@ class ProductService {
         modifiedBy: user.id,
         shop: shopProduct,
         images: imageUrls,
-        price: sellingPrice,
+        price: price,
         costPrice: costPrice
       });
       await produit.save();
@@ -53,7 +53,7 @@ class ProductService {
       const pricing = new Pricing({
         product: produit._id,
         costPrice,
-        sellingPrice,
+        sellingPrice: price,
         startDate: new Date(),
         endDate: expiryDate,
         createdBy: user.id
@@ -114,6 +114,7 @@ class ProductService {
       // Mettre à jour le produit
       Object.assign(produit, {
         ...productData,
+        price: price ?? produit.price,
         available: isActive ?? produit.available,
         modifiedBy: user.id,
         modificationDate: new Date()
@@ -133,7 +134,7 @@ class ProductService {
         const newPricing = new Pricing({
           product: id,
           costPrice: price,
-          sellingPrice,
+          sellingPrice: price,
           startDate: new Date(),
           endDate: null,
           createdBy: user.id
@@ -242,7 +243,7 @@ class ProductService {
 
       return {
         ...product.toObject(),
-        sellingPrice: currentPricing ? currentPricing.sellingPrice : product.sellingPrice,
+        sellingPrice: currentPricing ? currentPricing.sellingPrice : product.price,
         locked,
         minStock
       };

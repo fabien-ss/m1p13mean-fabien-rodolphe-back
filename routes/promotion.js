@@ -4,6 +4,7 @@ const router  = express.Router();
 const Promotion       = require('../models/Promotion');
 const PromotionService = require('../services/PromotionService');
 const Product = require('../models/Product');
+const authMiddleware = require('../middleware/auth');
 
 
 router.get('/', async (req, res) => {
@@ -69,7 +70,7 @@ router.get('/:id', async (req, res) => {
 });
 
 
-router.post('/', async (req, res) => {
+router.post('/', authMiddleware(['admin', 'boutique']),async (req, res) => {
   try {
     const productExists = await Product.exists({ _id: req.body.product });
     if (!productExists) return res.status(404).json({ message: 'Produit introuvable' });

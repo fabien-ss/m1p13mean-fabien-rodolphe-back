@@ -8,6 +8,11 @@ class CategoryService {
         .sort({ creationDate: -1 });
         //.populate("createdBy", "firstName name email");
     }
+    
+    static async getAllActive(){ // for front-office
+        return Category.find({ isActive: true }).select("name description _id")
+        .sort({ creationDate: -1 });
+    }
 
     static async delete(id){
         const category = await Category.findByIdAndDelete(id);
@@ -16,7 +21,7 @@ class CategoryService {
     }
     
     static async update(id, data, user){
-        const { name, parent, status, description } = data;
+        const { name, parent, description, isActive} = data;
         const { id: userId } = user;
 
         const currentUser = await User.findById(userId);
@@ -31,7 +36,7 @@ class CategoryService {
         Object.assign(category, {
             name: name,
             parent: categorieParent,
-            isActive: status,
+            isActive: isActive,
             description: description,
             updatedBy: currentUser
         });
