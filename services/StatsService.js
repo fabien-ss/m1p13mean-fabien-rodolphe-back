@@ -5,6 +5,8 @@ const Product = require('../models/Product');
 
 const toObjectId = (id) => new mongoose.Types.ObjectId(id);
 
+const MonthlyObjective = require("../models/MonthlyObjectTarget")
+
 class StatsService {
 
   static calculateVariation(current, previous) {
@@ -165,7 +167,7 @@ class StatsService {
   // ─────────────────────────────────────────────────────────────
   // Objectif mensuel + revenus aujourd'hui
   // ─────────────────────────────────────────────────────────────
-  async getMonthlyTarget(shopId) {
+  /*async getMonthlyTarget(shopId) {
     const { currentStart, currentEnd, previousStart, previousEnd } =
       StatsService.getCurrentAndPreviousMonthRange();
     const { todayStart, todayEnd, yesterdayStart, yesterdayEnd } =
@@ -202,16 +204,61 @@ class StatsService {
       revenue: { value: revenue,  trend: revenue  >= prevRevenue  ? 'up' : 'down' },
       today:   { value: todayVal, trend: todayVal >= yesterdayVal ? 'up' : 'down' },
     };
+  }*/
+ async getMonthlyTarget(shopId) {
+    const { currentStart, currentEnd, previousStart, previousEnd } =
+      StatsService.getCurrentAndPreviousMonthRange();
+    const { todayStart, todayEnd, yesterdayStart, yesterdayEnd } =
+      StatsService.getTodayRange();
+
+    const currentMonthIndex = new Date().getMonth(); // 0–11
+
+    const [matchCurrent, matchPrevious, matchToday, matchYesterday, monthlyObjective] = await Promise.all([
+      StatsService.buildMatch(shopId, currentStart, currentEnd),
+      StatsService.buildMatch(shopId, previousStart, previousEnd),
+      StatsService.buildMatch(shopId, todayStart, todayEnd),
+      StatsService.buildMatch(shopId, yesterdayStart, yesterdayEnd),
+      MonthlyObjective.findOne({ shopId, monthIndex: currentMonthIndex }),
+    ]);
+
+    const [currentRevenue, previousRevenue, todayRevenue, yesterdayRevenue] = await Promise.all([
+      Order.aggregate([{ $match: matchCurrent },   { $group: { _id: null, total: { $sum: '$total' } } }]),
+      Order.aggregate([{ $match: matchPrevious },  { $group: { _id: null, total: { $sum: '$total' } } }]),
+      Order.aggregate([{ $match: matchToday },     { $group: { _id: null, total: { $sum: '$total' } } }]),
+      Order.aggregate([{ $match: matchYesterday }, { $group: { _id: null, total: { $sum: '$total' } } }]),
+    ]);
+
+    const target       = monthlyObjective?.targetValue ?? 0;
+    const revenue      = currentRevenue[0]?.total ?? 0;
+    const prevRevenue  = previousRevenue[0]?.total ?? 0;
+    const todayVal     = todayRevenue[0]?.total ?? 0;
+    const yesterdayVal = yesterdayRevenue[0]?.total ?? 0;
+
+    const progressPercent = target > 0
+      ? parseFloat(((revenue / target) * 100).toFixed(2))
+      : 0;
+
+    return {
+      progressPercent,
+      target:  { value: target,  trend: revenue >= target ? 'up' : 'down' },
+      revenue: { value: revenue, trend: revenue >= prevRevenue ? 'up' : 'down' },
+      today:   { value: todayVal, trend: todayVal >= yesterdayVal ? 'up' : 'down' },
+    };
   }
 
   // ─────────────────────────────────────────────────────────────
   // Statistiques de ventes (nb commandes + revenus par mois)
   // ─────────────────────────────────────────────────────────────
-  async getSalesStatistics(shopId) {
+  /*async getSalesStatistics(shopId) {
     const { yearStart, yearEnd } = StatsService.getCurrentYearRange();
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
+
     const match = await StatsService.buildMatch(shopId, yearStart, yearEnd);
+
+    const MonthlyTargetForShop = await MonthlyObjective.find({
+      shopId: shopId
+    });
 
     const orders = await Order.aggregate([
       { $match: match },
@@ -239,19 +286,57 @@ class StatsService {
         { name: 'Revenue', data: revenueData },
       ],
     };
+  }*/
+ async getSalesStatistics(shopId) {
+    const { yearStart, yearEnd } = StatsService.getCurrentYearRange();
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    const match = await StatsService.buildMatch(shopId, yearStart, yearEnd);
+
+    const monthlyTargets = await MonthlyObjective.find({ shopId });
+
+    const orders = await Order.aggregate([
+      { $match: match },
+      {
+        $group: {
+          _id:        { $month: '$creationDate' },
+          salesCount: { $sum: 1 },
+          revenue:    { $sum: '$total' },
+        },
+      },
+    ]);
+
+    const targetData  = Array(12).fill(0);
+    const revenueData = Array(12).fill(0);
+
+    monthlyTargets.forEach(({ monthIndex, targetValue }) => {
+      targetData[monthIndex] = targetValue;
+    });
+
+    orders.forEach(({ _id, revenue }) => {
+      revenueData[_id - 1] = revenue;
+    });
+
+    return {
+      categories: months,
+      series: [
+        { name: 'Objectives', data: targetData  },
+        { name: 'Revenue',    data: revenueData },
+      ],
+    };
   }
 
   // ─────────────────────────────────────────────────────────────
   // Override manuel d'un mois (inchangé, logique métier)
   // ─────────────────────────────────────────────────────────────
-  async updateSalesStatistics(shopId, monthIndex, salesValue, revenueValue) {
-    await Shop.findByIdAndUpdate(shopId, {
-      $set: {
-        [`salesOverrides.${monthIndex}.sales`]:   salesValue,
-        [`salesOverrides.${monthIndex}.revenue`]: revenueValue,
-      },
-    });
-    return this.getSalesStatistics(shopId);
+  
+  async updateMonthlyObjective(shopId, monthIndex, targetValue) {
+    const result = await MonthlyObjective.findOneAndUpdate(
+      { shopId, monthIndex },
+      { shopId, monthIndex, targetValue },
+      { upsert: true, new: true }
+    );
+    return result;
   }
 }
 

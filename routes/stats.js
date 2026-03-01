@@ -53,7 +53,7 @@ router.get('/sales-statistics/:shopId', async (req, res) => {
 router.put('/sales-statistics/:shopId', async (req, res) => {
   try {
     const { monthIndex, salesValue, revenueValue } = req.body;
-    const data = await statsService.updateSalesStatistics(req.params.shopId, monthIndex, salesValue, revenueValue);
+    const data = await statsService.updateMonthlyObjective(req.params.shopId, monthIndex, revenueValue);
     res.json({ success: true, data });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

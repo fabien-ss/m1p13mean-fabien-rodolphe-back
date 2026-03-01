@@ -122,6 +122,17 @@ router.put('/:id/active', authMiddleware(['admin', 'boutique']), async (req, res
   }
 });
 
+router.put('/:id/image', authMiddleware(['admin', 'boutique']), upload.array("image"), async (req, res) => {
+  try {
+    const imageUrls = req.files?.map(file => `/uploads/${file.filename}`) ?? [];
+    const produit = await ProductService.updateImage(req.params.id, imageUrls);
+    res.status(200).json(produit);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+
 router.get('/shop/:shopId', async (req, res) => {
   try {
     const products = await ProductService.getByShop(req.params.shopId);
