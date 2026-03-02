@@ -24,6 +24,16 @@ router.get('/shop/:shopId/products', async (req, res) => {
     }
 });
 
+// api pour recuperer les commandes d'un client
+router.get('/client/:clientId', async (req, res) => {
+    try {
+        const orders = await OrderService.listOrdersByClient(req.params.clientId);
+        res.json(orders);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 // GET /api/orders/clients/search?q=
 router.get('/clients/search', async (req, res) => {
     try {
@@ -37,14 +47,14 @@ router.get('/clients/search', async (req, res) => {
 });
 
 // POST /api/orders
-// Body: { clientId, shopId, items: [{ produitId, quantite, prix }] }
+// Body: { clientId, items: [{ produitId, quantite, prix }] }
 router.post('/', async (req, res) => {
     try {
-        const { clientId, shopId, items } = req.body;
-        if (!clientId || !shopId || !items?.length) {
-            return res.status(400).json({ message: 'clientId, shopId et items sont requis.' });
+        const { clientId, items } = req.body;
+        if (!clientId || !items?.length) {
+            return res.status(400).json({ message: 'clientId et items sont requis.' });
         }
-        const order = await OrderService.createOrder(clientId, items, shopId);
+        const order = await OrderService.createOrder(clientId, items);
         res.status(201).json(order);
     } catch (err) {
         res.status(400).json({ message: err.message });
