@@ -3,6 +3,24 @@ const Promotion = require("../models/Promotion");
 
 class PromotionService {
 
+    // fonction pour obtenir toutes les promotions d'un shop (en se basant sur les produits du shop)
+    static async getByShop(shopId) {
+        return await Promotion.find()
+            .populate({
+                path: 'product',
+                match: { shop: shopId },
+                select: 'name price images brand'
+            });
+    }
+
+    static async disablePromotion(id) {
+        const promo = await Promotion.findById(id);
+        if (!promo) throw new Error('Promotion introuvable');
+
+        promo.endDate = new Date();
+        return await promo.save();
+    }
+
     static async getBestCurrentByProduct(productId, price, at = new Date()) {
         const promos = await Promotion.find({
             product: productId,

@@ -6,6 +6,33 @@ const ProductMovement = require("../models/ProductMovement");
 
 class OrderService {
 
+    static async listOrdersByClient(clientId) {
+        const orders = await Order.find({ client: new mongoose.Types.ObjectId(clientId) })
+            .populate('products.produit')
+            .populate('client', 'name email')
+            .sort({ creationDate: -1 })
+            .lean();
+
+        return orders.map(order => ({
+            id: order._id,
+            products: order.products.map(p => ({
+                id: p.produit._id,
+                name: p.produit.name,
+                price: p.produit.price,
+                devise: p.produit.devise,
+                quantity: p.quantite
+            })),
+            customer: {
+                name: order.client?.name ?? 'Unknown',
+                email: order.client?.email ?? ''
+            },
+            itemCount: order.products.reduce((sum, p) => sum + p.quantite, 0),
+            total: order.total,
+            status: order.statut,
+            date: order.creationDate
+        }));
+    }
+
     static async listOrdersByShop(shopId, startDate, endDate) {
         const query = Order.find();
 
@@ -86,7 +113,7 @@ class OrderService {
      * @param {Array<{produitId: string, quantite: number, prix: number}>} items
      * @param {string} shopId
      */
-    static async createOrder(clientId, items, shopId) {
+    static async createOrder(clientId, items) {
         if (!items || items.length === 0) {
             throw new Error('La commande doit contenir au moins un produit.');
         }
@@ -94,7 +121,7 @@ class OrderService {
         const productIds = items.map(i => new mongoose.Types.ObjectId(i.produitId));
         const products = await Product.find({
             _id: { $in: productIds },
-            shop: new mongoose.Types.ObjectId(shopId),
+            // shop: new mongoose.Types.ObjectId(shopId),
             available: true
         }).lean();
 

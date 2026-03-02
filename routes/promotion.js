@@ -4,7 +4,16 @@ const router  = express.Router();
 const Promotion       = require('../models/Promotion');
 const PromotionService = require('../services/PromotionService');
 const Product = require('../models/Product');
+const authMiddleware = require('../middleware/auth');
 
+router.put('/:id/disable', authMiddleware(['admin', 'boutique']), async (req, res) => {
+  try {
+    const promo = await PromotionService.disablePromotion(req.params.id);
+    res.json(promo);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
 
 router.get('/', async (req, res) => {
   try {
@@ -69,7 +78,7 @@ router.get('/:id', async (req, res) => {
 });
 
 
-router.post('/', async (req, res) => {
+router.post('/', authMiddleware(['admin', 'boutique']),async (req, res) => {
   try {
     const productExists = await Product.exists({ _id: req.body.product });
     if (!productExists) return res.status(404).json({ message: 'Produit introuvable' });
@@ -138,5 +147,16 @@ router.get('/product/:productId', async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
+// getByShop
+router.get('/shop/:shopId', async (req, res) => {
+  try {
+    const promos = await PromotionService.getByShop(req.params.shopId);
+    res.json(promos);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 
 module.exports = router;
