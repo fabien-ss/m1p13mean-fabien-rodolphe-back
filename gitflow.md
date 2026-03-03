@@ -36,18 +36,21 @@ Préfixe des tags : v
     git flow release start 1.0.0
     # ajustements finaux, versioning
     git flow release finish 1.0.0
+
 ### 4.3 Corriger un hotfix en production
     git flow hotfix start correction-bug
     # corriger le bug
     git add .
     git commit -m "Correction bug critique"
     git flow hotfix finish correction-bug
+
 ## 5. Push des branches sur le remote
     git push origin master
     git push origin develop
     git push --tags
 
 # Notes
+
 develop : branch pour le développement quotidien
 
 master : branch stable prête pour production
